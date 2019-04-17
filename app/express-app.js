@@ -18,7 +18,7 @@ module.exports.expressApp = pages => {
   const { getPdfOption } = require('./pdf-option/pdf-option-lib')
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
-  const listenPort = process.env.HCEP_PORT || 8000
+  const listenPort = process.env.HCEP_PORT || 8001
   /* bytes or string for https://www.npmjs.com/package/bytes */
   const maxRquestSize = process.env.HCEP_MAX_REQUEST_SIZE || '10MB'
 
@@ -94,18 +94,36 @@ module.exports.expressApp = pages => {
      * @return binary of PDF or error response (400 or 500)
      */
     .post(async (req, res) => {
+     
       const html = req.body.html
+      const header = req.body.header
+      const footer = req.body.footer
+      
       if (!html) {
         res.status(400)
         res.contentType('text/plain')
         res.end('post parameter "html" is not set')
       } else {
         const page = getSinglePage()
+
         try {
+
           await page.setContent(html)
+
           // Wait for web font loading completion
           // await page.evaluateHandle('document.fonts.ready')
           const pdfOption = getPdfOption(req.body.pdf_option)
+
+          pdfOption.displayHeaderFooter = true;
+
+          if(header){
+            pdfOption.headerTemplate = header
+          }
+
+          if(footer){
+            pdfOption.footerTemplate = footer
+          }
+
           // debug('pdfOption', pdfOption)
           const buff = await page.pdf(pdfOption)
           res.status(200)
@@ -121,6 +139,7 @@ module.exports.expressApp = pages => {
           return
         }
       }
+
     })
 
   app.route('/screenshot')

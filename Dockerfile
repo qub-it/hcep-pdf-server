@@ -52,10 +52,12 @@ COPY app /hcep/app
 RUN chmod -R 777 /hcep/app
 
 # Test
-COPY test /hcep/test
-RUN mocha
+# COPY test /hcep/test
+# RUN mocha
 # RUN rm -rf /hcep/test && npm uninstall -g mocha eslint
 
-EXPOSE 8000
+EXPOSE 8001
+EXPOSE 9229
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npm", "start"]
+#CMD ["npm", "start"]
+CMD ["/bin/bash"]
