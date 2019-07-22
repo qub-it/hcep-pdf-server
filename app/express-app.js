@@ -96,8 +96,6 @@ module.exports.expressApp = pages => {
     .post(async (req, res) => {
      
       const html = req.body.html
-      const header = req.body.header
-      const footer = req.body.footer
       
       if (!html) {
         res.status(400)
@@ -109,19 +107,41 @@ module.exports.expressApp = pages => {
         try {
 
           await page.setContent(html)
+          debug(`html received:${html}`)
 
           // Wait for web font loading completion
           // await page.evaluateHandle('document.fonts.ready')
           const pdfOption = getPdfOption(req.body.pdf_option)
-
-          pdfOption.displayHeaderFooter = true;
-
+          debug(`using PDFOption:${pdfOption}`)
+    
+          const header = req.body.header
           if(header){
+            debug(`header received:${header}`)
             pdfOption.headerTemplate = header
           }
 
+          const footer = req.body.footer
           if(footer){
+            debug(`footer received:${footer}`)
             pdfOption.footerTemplate = footer
+          }
+
+          if(header || footer) {
+            pdfOption.displayHeaderFooter = true;
+          } else {
+            pdfOption.displayHeaderFooter = false;
+          }
+
+          const headerHeight = req.body.headerHeight;
+          if(headerHeight) {
+            debug(`setting Margin-Top:${headerHeight}`)
+            pdfOption.margin.top = headerHeight;
+          }
+
+          const footerHeight = req.body.footerHeight;
+          if(footerHeight) {
+            debug(`setting Margin-Bottom:${footerHeight}`)
+            pdfOption.margin.bottom = footerHeight;
           }
 
           // debug('pdfOption', pdfOption)
