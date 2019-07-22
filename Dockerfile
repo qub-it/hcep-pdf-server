@@ -57,7 +57,7 @@ RUN chmod -R 777 /hcep/app
 # RUN rm -rf /hcep/test && npm uninstall -g mocha eslint
 
 EXPOSE 8001
-EXPOSE 9229
+#EXPOSE 9229
 ENTRYPOINT ["dumb-init", "--"]
-#CMD ["npm", "start"]
-CMD ["/bin/bash"]
+CMD ["npm", "start"]
+#CMD ["/bin/bash"]
