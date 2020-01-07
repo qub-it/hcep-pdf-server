@@ -105,15 +105,22 @@ module.exports.expressApp = pages => {
         const page = getSinglePage()
 
         try {
-
-          await page.setContent(html)
+          
+          
+          var fonts = ""
+          if(req.body.fonts){
+            fonts = req.body.fonts
+          }
+          
+          await page.setContent(fonts + html)
           debug(`html received:${html}`)
-
+          
           // Wait for web font loading completion
           // await page.evaluateHandle('document.fonts.ready')
           const pdfOption = getPdfOption(req.body.pdf_option)
           debug(`using PDFOption:${pdfOption}`)
-    
+          
+
           const header = req.body.header
           if(header){
             debug(`header received:${header}`)
@@ -122,7 +129,7 @@ module.exports.expressApp = pages => {
 
           const footer = req.body.footer
           if(footer){
-            debug(`footer received:${footer}`)
+            debug(`footer received:${footer}`)           
             pdfOption.footerTemplate = footer
           }
 
@@ -132,16 +139,33 @@ module.exports.expressApp = pages => {
             pdfOption.displayHeaderFooter = false;
           }
 
+          
+          const leftMargin = req.body.leftMargin;
+          if(leftMargin) {
+            debug(`setting Margin-Left:${leftMargin}`)
+            pdfOption.margin.left = leftMargin
+          }
+          
+          const rightMargin = req.body.rightMargin;
+          if(leftMargin) {
+            debug(`setting Margin-Right:${rightMargin}`)
+            pdfOption.margin.right = rightMargin
+          }
+          
           const headerHeight = req.body.headerHeight;
           if(headerHeight) {
             debug(`setting Margin-Top:${headerHeight}`)
-            pdfOption.margin.top = headerHeight;
+            if(headerHeight != "0px"){
+              pdfOption.margin.top = String(parseInt(headerHeight.replace("px","")) + 100 ) + "px";
+            }
           }
 
           const footerHeight = req.body.footerHeight;
           if(footerHeight) {
             debug(`setting Margin-Bottom:${footerHeight}`)
-            pdfOption.margin.bottom = footerHeight;
+            if(footerHeight != "0px"){
+              pdfOption.margin.bottom = String(parseInt(footerHeight.replace("px","")) + 100 ) + "px";
+            }
           }
 
           // debug('pdfOption', pdfOption)
