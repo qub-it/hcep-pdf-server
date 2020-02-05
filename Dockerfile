@@ -4,6 +4,12 @@ LABEL maintainer="yu_yamazaki@bizocean.co.jp"
 # Update
 RUN apt-get update --fix-missing && apt-get -y upgrade
 
+# Adding requirements for local build
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    gnupg2
+
 # Locale settings (japanese)
 RUN apt-get install -y locales task-japanese \
   && locale-gen ja_JP.UTF-8 \
