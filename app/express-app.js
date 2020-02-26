@@ -17,7 +17,7 @@ module.exports.expressApp = pages => {
   const timeout = require('connect-timeout')
   const crypto = require('crypto');
   const { getPdfOption } = require('./pdf-option/pdf-option-lib')
-  const { secretHash } = require('./pdf-option/secret/secret')
+  const secretHash = process.env.SECRET
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
   const listenPort = process.env.HCEP_PORT || 8001
