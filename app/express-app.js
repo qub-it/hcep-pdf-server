@@ -15,7 +15,9 @@ module.exports.expressApp = pages => {
   const express = require('express')
   const morgan = require('morgan')
   const timeout = require('connect-timeout')
+  const crypto = require('crypto');
   const { getPdfOption } = require('./pdf-option/pdf-option-lib')
+  const { secretHash } = require('./pdf-option/secret/secret')
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
   const listenPort = process.env.HCEP_PORT || 8001
@@ -53,8 +55,13 @@ module.exports.expressApp = pages => {
      * @return binary of PDF or error response (400 or 500)
      */
     .get(async (req, res) => {
+      const secret = req.query.secret
       const url = req.query.url
-      if (!url) {
+      const shasum = crypto.createHash('sha256');
+      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+        res.status(401)
+        res.end('parameter "secret" is not set or you aren\'t authorized')
+      }else if (!url) {
         res.status(400)
         res.end('get parameter "url" is not set')
         return
@@ -96,8 +103,12 @@ module.exports.expressApp = pages => {
     .post(async (req, res) => {
      
       const html = req.body.html
-      
-      if (!html) {
+      const secret = req.body.secret
+      const shasum = crypto.createHash('sha256');
+      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+        res.status(401)
+        res.end('parameter "secret" is not set or you aren\'t authorized')
+      }else if (!html) {
         res.status(400)
         res.contentType('text/plain')
         res.end('post parameter "html" is not set')
@@ -154,7 +165,12 @@ module.exports.expressApp = pages => {
      */
     .get(async (req, res) => {
       const url = req.query.url
-      if (!url) {
+      const secret = req.query.secret
+      const shasum = crypto.createHash('sha256');
+      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+        res.status(401)
+        res.end('parameter "secret" is not set or you aren\'t authorized')
+      }else if (!url) {
         res.status(400)
         res.contentType('text/plain')
         res.end('get parameter "url" is not set')
@@ -190,7 +206,12 @@ module.exports.expressApp = pages => {
      */
     .post(async (req, res) => {
       const html = req.body.html
-      if (!html) {
+      const secret = req.body.secret
+      const shasum = crypto.createHash('sha256');
+      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+        res.status(401)
+        res.end('parameter "secret" is not set or you aren\'t authorized')
+      }else if (!html) {
         await res.status(400)
         res.end('post parameter "html" is not set')
         return
@@ -217,9 +238,16 @@ module.exports.expressApp = pages => {
    * Health Check
    */
   app.get('/hc', async (req, res) => {
-    debug('health check ok')
-    res.status(200)
-    res.end('ok')
+    const secret = req.query.secret
+    const shasum = crypto.createHash('sha256');
+    if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+      res.status(401)
+      res.end('parameter "secret" is not set or you aren\'t authorized')
+    }else{
+      debug('health check ok')
+      res.status(200)
+      res.end('ok')
+    }
   })
 
   const appServer = app.listen(listenPort, () => {
