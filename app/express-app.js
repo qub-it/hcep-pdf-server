@@ -16,11 +16,18 @@ module.exports.expressApp = pages => {
   const morgan = require('morgan')
   const timeout = require('connect-timeout')
   const crypto = require('crypto');
+  const fs = require('fs');
+  const http = require('http');
+  const https = require('https');  
   const { getPdfOption } = require('./pdf-option/pdf-option-lib')
   const secretHash = process.env.SECRET
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
-  const listenPort = process.env.HCEP_PORT || 8001
+  const sslKeyPassword = process.env.SSL_KEY_PASSWORD || ''
+  const privateKeyPath = process.env.SSL_KEY_PATH || '/sslConfig/private.key'
+  const privateCertPath = process.env.SSL_CERT_PATH || '/sslConfig/private.crt'
+  const listenHttpPort = process.env.HCEP_PORT || 8001
+  const listenHttpsPort = process.env.HCEP_SSL_PORT || 8002
   /* bytes or string for https://www.npmjs.com/package/bytes */
   const maxRquestSize = process.env.HCEP_MAX_REQUEST_SIZE || '10MB'
 
@@ -250,8 +257,14 @@ module.exports.expressApp = pages => {
     }
   })
 
-  const appServer = app.listen(listenPort, () => {
-    console.log('Listening on:', listenPort)
-  })
-  return appServer
+  var privateKey  = fs.readFileSync(privateKeyPath, 'utf8');
+  var certificate = fs.readFileSync(privateCertPath, 'utf8');  
+  var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
+  
+  var httpServer = http.createServer(app);
+  httpServer.listen(listenHttpPort);
+  var httpsServer = https.createServer(credentials, app);
+  httpsServer.listen(listenHttpsPort);
+
+  return httpsServer;
 }

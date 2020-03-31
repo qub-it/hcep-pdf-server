@@ -1,4 +1,6 @@
 *.sh
+.vscode
+sslcert
 fonts/*
 !fonts/empty
 !fonts/fonts.conf
