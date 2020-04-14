@@ -23,7 +23,7 @@ module.exports.expressApp = pages => {
   const secretHash = process.env.SECRET
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
-  const sslKeyPassword = process.env.SSL_KEY_PASSWORD || ''
+  const sslKeyPassword = process.env.PDF_SERVER_KEY_PASSWORD || ''
   //const privateKeyPath = process.env.SSL_KEY_PATH || ''
   //const privateCertPath = process.env.SSL_CERT_PATH || ''
   //const tlsConfig = process.env.PDF_SERVER_TLS_CONFIG || ''
