@@ -24,8 +24,8 @@ module.exports.expressApp = pages => {
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
   const sslKeyPassword = process.env.SSL_KEY_PASSWORD || ''
-  const privateKeyPath = process.env.SSL_KEY_PATH || '/sslConfig/private.key'
-  const privateCertPath = process.env.SSL_CERT_PATH || '/sslConfig/private.crt'
+  const privateKeyPath = process.env.SSL_KEY_PATH || ''
+  const privateCertPath = process.env.SSL_CERT_PATH || ''
   const listenHttpPort = process.env.HCEP_PORT || 8001
   const listenHttpsPort = process.env.HCEP_SSL_PORT || 8002
   /* bytes or string for https://www.npmjs.com/package/bytes */
@@ -257,14 +257,31 @@ module.exports.expressApp = pages => {
     }
   })
 
-  var privateKey  = fs.readFileSync(privateKeyPath, 'utf8');
-  var certificate = fs.readFileSync(privateCertPath, 'utf8');  
-  var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
-  
-  var httpServer = http.createServer(app);
-  httpServer.listen(listenHttpPort);
-  var httpsServer = https.createServer(credentials, app);
-  httpsServer.listen(listenHttpsPort);
+  try {
+    console.log(privateCertPath);
+    console.log(privateKeyPath);
 
-  return httpsServer;
+    if(privateCertPath === '') {
+      debug('https not configured');
+      var httpServer = http.createServer(app);
+      httpServer.listen(listenHttpPort);
+      console.log('Listening on:', listenHttpPort)
+      return httpServer;
+    }else {
+      var privateKey  = fs.readFileSync(privateKeyPath, 'utf8');
+      var certificate = fs.readFileSync(privateCertPath, 'utf8');  
+      var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
+  
+      var httpsServer = https.createServer(credentials, app);
+      httpsServer.listen(listenHttpsPort);
+      
+      console.log('Listening on:', listenHttpsPort)
+      return httpsServer;
+    }
+  } catch (err) {
+    debug('Error initiating http server');
+    console.log(err);
+  }  
+
+  return null;
 }
