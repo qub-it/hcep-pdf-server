@@ -258,9 +258,6 @@ module.exports.expressApp = pages => {
   })
 
   try {
-    console.log(privateCertPath);
-    console.log(privateKeyPath);
-
     if(privateCertPath === '') {
       debug('https not configured');
       var httpServer = http.createServer(app);
