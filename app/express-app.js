@@ -18,14 +18,15 @@ module.exports.expressApp = pages => {
   const crypto = require('crypto');
   const fs = require('fs');
   const http = require('http');
-  const https = require('https');  
+  const https = require('https');
   const { getPdfOption } = require('./pdf-option/pdf-option-lib')
   const secretHash = process.env.SECRET
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
   const sslKeyPassword = process.env.SSL_KEY_PASSWORD || ''
-  const privateKeyPath = process.env.SSL_KEY_PATH || ''
-  const privateCertPath = process.env.SSL_CERT_PATH || ''
+  //const privateKeyPath = process.env.SSL_KEY_PATH || ''
+  //const privateCertPath = process.env.SSL_CERT_PATH || ''
+  //const tlsConfig = process.env.PDF_SERVER_TLS_CONFIG || ''
   const listenHttpPort = process.env.HCEP_PORT || 8001
   const listenHttpsPort = process.env.HCEP_SSL_PORT || 8002
   /* bytes or string for https://www.npmjs.com/package/bytes */
@@ -108,7 +109,7 @@ module.exports.expressApp = pages => {
      * @return binary of PDF or error response (400 or 500)
      */
     .post(async (req, res) => {
-     
+
       const html = req.body.html
       const secret = req.body.secret
       const shasum = crypto.createHash('sha256');
@@ -123,14 +124,14 @@ module.exports.expressApp = pages => {
         const page = getSinglePage()
 
         try {
-          
+
           const pdfOption = getPdfOption(req.body.pdf_option)
           debug(`using PDFOption:${pdfOption}`)
-          
-                    
+
+
           await page.setContent(html)
           debug(`html received:${html}`)
-          
+
           pdfOption.displayHeaderFooter = false;
 
           const leftMargin = req.body.leftMargin;
@@ -138,7 +139,7 @@ module.exports.expressApp = pages => {
             debug(`setting Margin-Left:${leftMargin}`)
             pdfOption.margin.left = leftMargin
           }
-          
+
           const rightMargin = req.body.rightMargin;
           if(leftMargin) {
             debug(`setting Margin-Right:${rightMargin}`)
@@ -258,27 +259,32 @@ module.exports.expressApp = pages => {
   })
 
   try {
-    if(privateCertPath === '') {
+    let tlsConfig = __dirname+"/tls"
+
+    // Check for empty directory
+    if(fs.readdirSync(tlsConfig).length === 0) {
       debug('https not configured');
       var httpServer = http.createServer(app);
       httpServer.listen(listenHttpPort);
       console.log('Listening on:', listenHttpPort)
       return httpServer;
-    }else {
-      var privateKey  = fs.readFileSync(privateKeyPath, 'utf8');
-      var certificate = fs.readFileSync(privateCertPath, 'utf8');  
+    } else {
+      // We are aware that the names are hardcoded
+      // TODO: decide if they should be variables when going into production
+      var privateKey  = fs.readFileSync(tlsConfig+"/private.key", 'utf8');
+      var certificate = fs.readFileSync(tlsConfig+"/private.crt", 'utf8');
       var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
-  
+
       var httpsServer = https.createServer(credentials, app);
       httpsServer.listen(listenHttpsPort);
-      
+
       console.log('Listening on:', listenHttpsPort)
       return httpsServer;
     }
   } catch (err) {
     debug('Error initiating http server');
     console.log(err);
-  }  
+  }
 
   return null;
 }

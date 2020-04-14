@@ -47,6 +47,8 @@ COPY fonts /usr/share/fonts
 
 COPY app /hcep/app
 
+RUN cd app && mkdir tls
+
 RUN chmod -R 777 /hcep/app
 
 ENTRYPOINT ["dumb-init", "--"]
