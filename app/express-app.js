@@ -271,8 +271,8 @@ module.exports.expressApp = pages => {
     } else {
       // We are aware that the names are hardcoded
       // TODO: decide if they should be variables when going into production
-      var privateKey  = fs.readFileSync(tlsConfig+"/private.key", 'utf8');
-      var certificate = fs.readFileSync(tlsConfig+"/private.crt", 'utf8');
+      var privateKey  = fs.readFileSync(tlsConfig+"/pdf_server.key", 'utf8');
+      var certificate = fs.readFileSync(tlsConfig+"/pdf_server.crt", 'utf8');
       var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
 
       var httpsServer = https.createServer(credentials, app);
