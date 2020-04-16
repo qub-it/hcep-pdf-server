@@ -269,10 +269,17 @@ module.exports.expressApp = pages => {
       console.log('Listening on:', listenHttpPort)
       return httpServer;
     } else {
-      // We are aware that the names are hardcoded
-      // TODO: decide if they should be variables when going into production
+      try{
       var privateKey  = fs.readFileSync(tlsConfig+"/pdf_server.key", 'utf8');
       var certificate = fs.readFileSync(tlsConfig+"/pdf_server.crt", 'utf8');
+    } catch(err){
+      debug("Folder exists, but filenames aren't correct. Falling back to http");
+      console.log(err);
+      var httpServer = http.createServer(app);
+      httpServer.listen(listenHttpPort);
+      console.log('Listening on:', listenHttpPort)
+      return httpServer;
+    }
       var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
 
       var httpsServer = https.createServer(credentials, app);
