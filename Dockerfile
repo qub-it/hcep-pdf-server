@@ -9,7 +9,8 @@ RUN apt-get update --fix-missing && apt-get -y upgrade
 RUN apt-get update && \
     apt-get install -y \
     wget \
-    gnupg2
+    gnupg2 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install stable chrome and dependencies.
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
@@ -50,6 +51,8 @@ COPY app /hcep/app
 RUN cd app && mkdir tls
 
 RUN chmod -R 777 /hcep/app
+
+RUN apt-get autoremove -y --purge && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["dumb-init", "--"]
 
