@@ -1,22 +1,30 @@
-FROM node:10-slim
+FROM node:10.20.1-slim
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Image updates
-RUN apt-get update --fix-missing && apt-get -y upgrade
+RUN apt-get update --fix-missing && apt-get install -y -f --no-install-recommends && \
+    apt-get autoremove -y --purge && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Adding requirements for local build
 RUN apt-get update && \
-    apt-get install -y \
-    wget \
-    gnupg2 \
+    apt-get install -y --no-install-recommends \
+    wget=1.18-5+deb9u3 \
+    gnupg2=2.1.18-8~deb9u4 \
+    ca-certificates=20161130+nmu1+deb9u1 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install stable chrome and dependencies.
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
-  && apt-get install -y google-chrome-stable --no-install-recommends \
+  && apt-get install -y google-chrome-stable=83.0.4103.61-1 --no-install-recommends \
+  && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /src/*.deb
 
@@ -39,21 +47,25 @@ COPY package.json /hcep/
 
 WORKDIR /hcep/
 
-RUN npm install -u npm && \
-    npm install -g mocha eslint && \
-    npm install
+RUN npm install -u npm@6.14.5 && \
+    npm install -g mocha@7.2.0 eslint@7.1.0 && \
+    # This installs the hcep server through the package.json file
+    npm install && \
+    npm cache clean --force
 
 # Install fonts
 COPY fonts /usr/share/fonts
 
 COPY app /hcep/app
 
-RUN cd app && mkdir tls
+WORKDIR /hcep/app
+
+RUN mkdir tls
 
 RUN chmod -R 777 /hcep/app
 
-RUN apt-get autoremove -y --purge && rm -rf /var/lib/apt/lists/*
+RUN apt-get autoremove -y --purge && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/apt/sources.list.d/*
 
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT [ "dumb-init", "--" ]
 
-CMD ["node",  "--inspect=0.0.0.0:9229", "app/pdf-server.js"]
+CMD [ "node", "--inspect=0.0.0.0:9229", "app/pdf-server.js" ]
