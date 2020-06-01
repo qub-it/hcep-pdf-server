@@ -62,6 +62,8 @@ WORKDIR /hcep/app
 
 RUN mkdir tls
 
+WORKDIR /hcep/
+
 RUN chmod -R 777 /hcep/app
 
 RUN apt-get autoremove -y --purge && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/apt/sources.list.d/*
