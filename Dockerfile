@@ -4,12 +4,6 @@ LABEL maintainer="diogo.sousa@qub-it.com"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Image updates
-RUN apt-get update --fix-missing && apt-get install -y -f --no-install-recommends && \
-    apt-get autoremove -y --purge && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Adding requirements for local build
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
