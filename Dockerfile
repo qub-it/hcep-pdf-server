@@ -1,6 +1,6 @@
 # This is built upon debian-stretch for apt-get packages
 # So we have stretch and stretch/updates available
-FROM node:10.20.1-slim
+FROM node:10.20.1-slim as pdf_server_build
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
@@ -53,10 +53,10 @@ COPY package.json /hcep/
 
 WORKDIR /hcep/
 
-RUN npm install --no-optional --no-audit --no-package-lock npm@6.14.5 && \
-    npm install --global --no-audit --no-optional --no-package-lock mocha@7.2.0 eslint@7.1.0 && \
+RUN npm install --no-optional --no-package-lock npm@6.14.5 && \
+    npm install --global --no-optional --no-package-lock mocha@7.2.0 eslint@7.1.0 && \
     # This installs the hcep-server through the package.json file
-    npm install --no-audit --no-optional --no-package-lock && \
+    npm install --no-optional --no-package-lock && \
     # NPM clean up - yes, I know what I'm doing.
     npm prune --force && \
     npm cache clean --force
@@ -78,6 +78,14 @@ RUN chmod -R 777 /hcep/app
 RUN apt-get autoremove --yes --purge \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /etc/apt/sources.list.d/*
+
+# Start a fresh image - this is the one that will be tagged
+FROM scratch
+
+# Copy everything over - no issues as this image runs from / and uses root:root
+COPY --from=pdf_server_build / /
+
+WORKDIR /hcep/
 
 ENTRYPOINT [ "dumb-init", "--" ]
 
