@@ -22,7 +22,7 @@ RUN apt-get update && \
 
 # Install stable chrome and dependencies.
 # "-O -" writes file contents to stdout
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
   && apt-get install --yes --no-install-recommends google-chrome-stable=83.0.4103.97-1 \
@@ -53,11 +53,12 @@ COPY package.json /hcep/
 
 WORKDIR /hcep/
 
-RUN npm install -u npm@6.14.5 && \
-    npm install -g mocha@7.2.0 eslint@7.1.0 && \
+RUN npm install --no-optional --no-audit --no-package-lock npm@6.14.5 && \
+    npm install --global --no-audit --no-optional --no-package-lock mocha@7.2.0 eslint@7.1.0 && \
     # This installs the hcep-server through the package.json file
-    npm install && \
+    npm install --no-audit --no-optional --no-package-lock && \
     # NPM clean up - yes, I know what I'm doing.
+    npm prune --force && \
     npm cache clean --force
 
 # Install fonts
