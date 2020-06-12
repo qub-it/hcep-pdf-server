@@ -4,9 +4,6 @@ FROM node:10.20.1-slim as pdf_server_build
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
-# Assumes default answer if none is provided
-ENV DEBIAN_FRONTEND=noninteractive
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Adding requirements for local build
