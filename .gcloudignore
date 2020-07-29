@@ -1,5 +1,0 @@
-Dockerfile
-*.sh
-node_modules/
-.git
-.gitignore
