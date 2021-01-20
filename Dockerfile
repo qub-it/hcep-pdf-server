@@ -6,11 +6,14 @@ LABEL maintainer="diogo.sousa@qub-it.com"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+ENV DEBIAN_FRONTEND="noninteractive"
+
 # Adding requirements for local build
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
     wget=1.18-5+deb9u3 \
     gnupg2=2.1.18-8~deb9u4 \
+    libxss1=1:1.2.2-1 \
     ca-certificates=20200601~deb9u1 \
     # Cleaning operations after install
     && apt-get autoremove --yes --purge \
@@ -22,7 +25,7 @@ RUN apt-get update && \
 RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=87.0.4280.141-1 \
+  && apt-get install --yes --no-install-recommends google-chrome-stable=88.0.4324.96-1 \
   # Cleaning operations after install
   && apt-get autoremove --yes --purge \
   && apt-get clean \
@@ -32,17 +35,17 @@ RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signi
   && rm -rf /etc/apt/sources.list.d/*
 
 # It's a good idea to use dumb-init to help prevent zombie chrome processes.
-ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_x86_64 /usr/local/bin/dumb-init
+ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.4/dumb-init_1.2.4_x86_64 /usr/local/bin/dumb-init
 
 RUN chmod +x /usr/local/bin/dumb-init
 
 # If you wish to use default chromium installed with puppeteer
-ENV HCEP_USE_CHROMIUM true
+ENV HCEP_USE_CHROMIUM="true"
 
 # If you want to extend pdf options, rename app/my-pdf-option-presets.js.sample to app/my-pdf-option-presets.js and activate this
 ENV HCEP_MY_PDF_OPTION_PRESETS_FILE_PATH="./my-pdf-option-presets"
 
-ENV NODE_ENV production
+ENV NODE_ENV="production"
 
 RUN mkdir /hcep/
 
