@@ -128,7 +128,6 @@ module.exports.expressApp = pages => {
           const pdfOption = getPdfOption(req.body.pdf_option)
           debug(`using PDFOption:${pdfOption}`)
 
-
           await page.setContent(html)
           debug(`html received:${html}`)
 
@@ -144,6 +143,18 @@ module.exports.expressApp = pages => {
           if(leftMargin) {
             debug(`setting Margin-Right:${rightMargin}`)
             pdfOption.margin.right = rightMargin
+          }
+
+          const topMargin = req.body.topMargin;
+          if(topMargin) {
+            debug(`setting Margin-Right:${topMargin}`)
+            pdfOption.margin.top = topMargin
+          }
+
+          const bottomMargin = req.body.bottomMargin;
+          if(bottomMargin) {
+            debug(`setting Margin-Right:${bottomMargin}`)
+            pdfOption.margin.bottom = bottomMargin
           }
 
           // debug('pdfOption', pdfOption)
