@@ -25,7 +25,7 @@ RUN apt-get update && \
 RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=89.0.4389.90-1 \
+  && apt-get install --yes --no-install-recommends google-chrome-stable=89.0.4389.114-1 \
   # Cleaning operations after install
   && apt-get autoremove --yes --purge \
   && apt-get clean \
