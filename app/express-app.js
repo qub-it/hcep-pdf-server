@@ -66,7 +66,7 @@ module.exports.expressApp = pages => {
       const secret = req.query.secret
       const url = req.query.url
       const shasum = crypto.createHash('sha256');
-      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
         res.status(401)
         res.end('parameter "secret" is not set or you aren\'t authorized')
       }else if (!url) {
@@ -113,7 +113,7 @@ module.exports.expressApp = pages => {
       const html = req.body.html
       const secret = req.body.secret
       const shasum = crypto.createHash('sha256');
-      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
         res.status(401)
         res.end('parameter "secret" is not set or you aren\'t authorized')
       }else if (!html) {
@@ -186,7 +186,7 @@ module.exports.expressApp = pages => {
       const url = req.query.url
       const secret = req.query.secret
       const shasum = crypto.createHash('sha256');
-      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
         res.status(401)
         res.end('parameter "secret" is not set or you aren\'t authorized')
       }else if (!url) {
@@ -227,7 +227,7 @@ module.exports.expressApp = pages => {
       const html = req.body.html
       const secret = req.body.secret
       const shasum = crypto.createHash('sha256');
-      if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
         res.status(401)
         res.end('parameter "secret" is not set or you aren\'t authorized')
       }else if (!html) {
@@ -259,7 +259,7 @@ module.exports.expressApp = pages => {
   app.get('/hc', async (req, res) => {
     const secret = req.query.secret
     const shasum = crypto.createHash('sha256');
-    if(!secret || shasum.update(secret).digest('hex') != secretHash ) {
+    if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
       res.status(401)
       res.end('parameter "secret" is not set or you aren\'t authorized')
     }else{
