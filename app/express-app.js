@@ -126,11 +126,11 @@ module.exports.expressApp = pages => {
         try {
           await page.setContent(html)
 
-
+          var pdfOption = null;
           const optionsstr= req.body.pdfOption;
           if(optionsstr){
             const options= JSON.parse(optionsstr);
-            const pdfOption = getPdfOption('A4')
+            pdfOption = getPdfOption('A4')
             pdfOption.format = options.format;
             pdfOption.landscape = options.landscape;
             pdfOption.scale = options.scale;
@@ -146,7 +146,7 @@ module.exports.expressApp = pages => {
             pdfOption.margin.left = options.marginLeft;
             pdfOption.pageRanges = options.pageRanges;
           }else{
-            const pdfOption = getPdfOption(req.body.pdf_option)
+            pdfOption = getPdfOption(req.body.pdf_option)
             debug(`using PDFOption:${pdfOption}`)
             pdfOption.displayHeaderFooter = false;
 
