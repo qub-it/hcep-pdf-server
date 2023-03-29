@@ -11,10 +11,10 @@ ENV DEBIAN_FRONTEND="noninteractive"
 # Adding requirements for local build
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
-    wget \
-    gnupg2 \
-    libxss1 \
-    ca-certificates \
+    wget=1.21-1+deb11u1 \
+    gnupg2=2.2.27-2+deb11u2 \
+    libxss1=1:1.2.3-1 \
+    ca-certificates=20210119 \
     # Cleaning operations after install
     && apt-get autoremove --yes --purge \
     && apt-get clean \

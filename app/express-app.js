@@ -126,24 +126,51 @@ module.exports.expressApp = pages => {
         try {
           await page.setContent(html)
 
-          const options= JSON.parse(req.body.pdf_option);
-          
-          const pdfOption = getPdfOption('A4')
-          pdfOption.format = options.format;
-          pdfOption.landscape = options.landscape;
-          pdfOption.scale = options.scale;
-          pdfOption.displayHeaderFooter = options.displayHeaderFooter;
-          pdfOption.headerTemplate = options.headerTemplate;
-          pdfOption.footerTemplate = options.footerTemplate;
-          pdfOption.printBackground = options.printBackground;
-          pdfOption.preferCSSPageSize = options.preferCSSPageSize;
-          pdfOption.omitBackground = options.omitBackground;
-          pdfOption.margin.top = options.marginTop;
-          pdfOption.margin.right = options.marginRight;
-          pdfOption.margin.bottom = options.marginBottom;
-          pdfOption.margin.left = options.marginLeft;
-          pdfOption.pageRanges = options.pageRanges;
 
+          const optionsstr= req.body.pdfOption;
+          if(optionsstr){
+            const options= JSON.parse(optionsstr);
+            const pdfOption = getPdfOption('A4')
+            pdfOption.format = options.format;
+            pdfOption.landscape = options.landscape;
+            pdfOption.scale = options.scale;
+            pdfOption.displayHeaderFooter = options.displayHeaderFooter;
+            pdfOption.headerTemplate = options.headerTemplate;
+            pdfOption.footerTemplate = options.footerTemplate;
+            pdfOption.printBackground = options.printBackground;
+            pdfOption.preferCSSPageSize = options.preferCSSPageSize;
+            pdfOption.omitBackground = options.omitBackground;
+            pdfOption.margin.top = options.marginTop;
+            pdfOption.margin.right = options.marginRight;
+            pdfOption.margin.bottom = options.marginBottom;
+            pdfOption.margin.left = options.marginLeft;
+            pdfOption.pageRanges = options.pageRanges;
+          }else{
+            const pdfOption = getPdfOption(req.body.pdf_option)
+            debug(`using PDFOption:${pdfOption}`)
+            pdfOption.displayHeaderFooter = false;
+
+            const leftMargin = req.body.leftMargin;
+            if(leftMargin) {
+              debug(`setting Margin-Left:${leftMargin}`)
+              pdfOption.margin.left = leftMargin
+            }
+            const rightMargin = req.body.rightMargin;
+            if(leftMargin) {
+              debug(`setting Margin-Right:${rightMargin}`)
+              pdfOption.margin.right = rightMargin
+            }
+            const topMargin = req.body.topMargin;
+            if(topMargin) {
+              debug(`setting Margin-Right:${topMargin}`)
+              pdfOption.margin.top = topMargin
+            }
+            const bottomMargin = req.body.bottomMargin;
+            if(bottomMargin) {
+              debug(`setting Margin-Right:${bottomMargin}`)
+              pdfOption.margin.bottom = bottomMargin
+            }
+          }
           const buff = await page.pdf(pdfOption)
           res.status(200)
           res.contentType('application/pdf')
