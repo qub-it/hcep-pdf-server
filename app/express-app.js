@@ -19,7 +19,7 @@ module.exports.expressApp = pages => {
   const fs = require('fs');
   const http = require('http');
   const https = require('https');
-  const { getPdfOption } = require('./pdf-option/pdf-option-lib')
+  const { getPdfOption, defaultPdfOptionKey } = require('./pdf-option/pdf-option-lib')
   const secretHash = process.env.SECRET
   const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
   const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
@@ -84,7 +84,7 @@ module.exports.expressApp = pages => {
           )
           // Wait for web font loading completion
           // await page.evaluateHandle('document.fonts.ready')
-          const pdfOption = getPdfOption(req.query.pdf_option)
+          const pdfOption = getPdfOption("A4")
           // debug('pdfOption', pdfOption)
           const buff = await page.pdf(pdfOption)
           res.status(200)
@@ -124,40 +124,26 @@ module.exports.expressApp = pages => {
         const page = getSinglePage()
 
         try {
-
-          const pdfOption = getPdfOption(req.body.pdf_option)
-          debug(`using PDFOption:${pdfOption}`)
-
           await page.setContent(html)
-          debug(`html received:${html}`)
 
-          pdfOption.displayHeaderFooter = false;
+          const options= JSON.parse(req.body.pdf_option);
+          
+          const pdfOption = getPdfOption('A4')
+          pdfOption.format = options.format;
+          pdfOption.landscape = options.landscape;
+          pdfOption.scale = options.scale;
+          pdfOption.displayHeaderFooter = options.displayHeaderFooter;
+          pdfOption.headerTemplate = options.headerTemplate;
+          pdfOption.footerTemplate = options.footerTemplate;
+          pdfOption.printBackground = options.printBackground;
+          pdfOption.preferCSSPageSize = options.preferCSSPageSize;
+          pdfOption.omitBackground = options.omitBackground;
+          pdfOption.margin.top = options.marginTop;
+          pdfOption.margin.right = options.marginRight;
+          pdfOption.margin.bottom = options.marginBottom;
+          pdfOption.margin.left = options.marginLeft;
+          pdfOption.pageRanges = options.pageRanges;
 
-          const leftMargin = req.body.leftMargin;
-          if(leftMargin) {
-            debug(`setting Margin-Left:${leftMargin}`)
-            pdfOption.margin.left = leftMargin
-          }
-
-          const rightMargin = req.body.rightMargin;
-          if(leftMargin) {
-            debug(`setting Margin-Right:${rightMargin}`)
-            pdfOption.margin.right = rightMargin
-          }
-
-          const topMargin = req.body.topMargin;
-          if(topMargin) {
-            debug(`setting Margin-Right:${topMargin}`)
-            pdfOption.margin.top = topMargin
-          }
-
-          const bottomMargin = req.body.bottomMargin;
-          if(bottomMargin) {
-            debug(`setting Margin-Right:${bottomMargin}`)
-            pdfOption.margin.bottom = bottomMargin
-          }
-
-          // debug('pdfOption', pdfOption)
           const buff = await page.pdf(pdfOption)
           res.status(200)
           res.contentType('application/pdf')

@@ -1,6 +1,6 @@
 # This is built upon debian-stretch for apt-get packages
 # So we have stretch and stretch/updates available
-FROM node:10.20.1-slim as pdf_server_build
+FROM node:lts-slim as pdf_server_build
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
@@ -11,10 +11,10 @@ ENV DEBIAN_FRONTEND="noninteractive"
 # Adding requirements for local build
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
-    wget=1.18-5+deb9u3 \
-    gnupg2=2.1.18-8~deb9u4 \
-    libxss1=1:1.2.2-1 \
-    ca-certificates=20200601~deb9u1 \
+    wget \
+    gnupg2 \
+    libxss1 \
+    ca-certificates \
     # Cleaning operations after install
     && apt-get autoremove --yes --purge \
     && apt-get clean \
@@ -22,10 +22,11 @@ RUN apt-get update && \
 
 # Install stable chrome and dependencies.
 # "-O -" writes file contents to stdout
+
 RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=105.0.5195.125-1 \
+  && apt-get install --yes --no-install-recommends google-chrome-stable  \
   # Cleaning operations after install
   && apt-get autoremove --yes --purge \
   && apt-get clean \
