@@ -11,10 +11,10 @@ ENV DEBIAN_FRONTEND="noninteractive"
 # Adding requirements for local build
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
-    wget=1.21-1+deb11u1 \
-    gnupg2=2.2.27-2+deb11u2 \
+    wget=1.21.3-1+b2 \
+    gnupg2=2.2.40-1.1 \
     libxss1=1:1.2.3-1 \
-    ca-certificates=20210119 \
+    ca-certificates=20230311 \
     # Cleaning operations after install
     && apt-get autoremove --yes --purge \
     && apt-get clean \
@@ -26,7 +26,7 @@ RUN apt-get update && \
 RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
   && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=112.0.5615.121-1  \
+  && apt-get install --yes --no-install-recommends google-chrome-stable=119.0.6045.199-1 \
   # Cleaning operations after install
   && apt-get autoremove --yes --purge \
   && apt-get clean \
