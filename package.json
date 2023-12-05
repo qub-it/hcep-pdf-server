@@ -4,17 +4,17 @@
   "description": "Simple PDF rendering server using Headless Chrome & Express & Puppeteer",
   "main": "app/pdf-server.js",
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "chai": "^4.2.0",
+    "body-parser": "^1.20.2",
+    "chai": "^4.3.10",
     "connect-timeout": "^1.9.0",
-    "debug": "^3.1.0",
-    "express": "^4.16.4",
-    "merge-options" : "^1.0.1",
-    "mocha": "^5.2.0",
-    "morgan": "^1.9.1",
+    "debug": "^4.3.4",
+    "express": "^4.18.2",
+    "merge-options" : "^3.0.4",
+    "mocha": "^10.2.0",
+    "morgan": "^1.10.0",
     "npm": "^6.5.0",
-    "puppeteer": "1.18.1",
-    "supertest": "^3.1.0"
+    "puppeteer": "21.5.2",
+    "supertest": "^6.3.3"
   },
   "devDependencies": {
   },

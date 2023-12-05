@@ -1,6 +1,6 @@
 # This is built upon debian-stretch for apt-get packages
 # So we have stretch and stretch/updates available
-FROM node:lts-slim as pdf_server_build
+FROM node:lts-bookworm-slim as pdf_server_build
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
@@ -9,24 +9,26 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Adding requirements for local build
-RUN apt-get update && \
-    apt-get install --yes --no-install-recommends \
-    wget=1.21-1+deb11u1 \
-    gnupg2=2.2.27-2+deb11u2 \
-    libxss1=1:1.2.3-1 \
-    ca-certificates=20210119 \
+RUN apt update && \
+    apt install --yes --no-install-recommends \
+    apt-transport-https \
+    curl \
+    gnupg2\
+    libxss1 \
+    ca-certificates\
     # Cleaning operations after install
-    && apt-get autoremove --yes --purge \
-    && apt-get clean \
+    && apt autoremove --yes --purge \
+    && apt clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install stable chrome and dependencies.
 # "-O -" writes file contents to stdout
 
-RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-  && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-  && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=112.0.5615.121-1  \
+RUN curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg >> /dev/null \
+  && echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main | tee /etc/apt/sources.list.d/google-chrome.list \
+  && apt update \
+  && apt install --yes --no-install-recommends google-chrome-stable \
+  && apt upgrade --yes \
   # Cleaning operations after install
   && apt-get autoremove --yes --purge \
   && apt-get clean \
@@ -54,8 +56,8 @@ COPY package.json /hcep/
 
 WORKDIR /hcep/
 
-RUN npm install --no-optional --no-package-lock npm@6.14.5 && \
-    npm install --global --no-optional --no-package-lock mocha@7.2.0 eslint@7.1.0 && \
+RUN npm install --no-optional --no-package-lock npm@10.2.4 && \
+    npm install --global --no-optional --no-package-lock mocha@10.2.0 eslint@7.1.0 && \
     # This installs the hcep-server through the package.json file
     npm install --no-optional --no-package-lock && \
     # NPM clean up - yes, I know what I'm doing.
