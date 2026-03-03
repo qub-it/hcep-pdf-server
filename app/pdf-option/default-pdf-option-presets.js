@@ -31,4 +31,4 @@ module.exports.defaultPdfOptionPresets = {
     landscape: true,
     margin: '0mm'
   }
-}
+};

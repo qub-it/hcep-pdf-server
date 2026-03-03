@@ -1,28 +1,28 @@
 {
   "name": "hcep-pdf-server",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Simple PDF rendering server using Headless Chrome & Express & Puppeteer",
   "main": "app/pdf-server.js",
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "chai": "^4.2.0",
+    "body-parser": "^1.20.3",
+    "express": "^4.21.2",
     "connect-timeout": "^1.9.0",
-    "debug": "^3.1.0",
-    "express": "^4.16.4",
-    "merge-options" : "^1.0.1",
-    "mocha": "^5.2.0",
-    "morgan": "^1.9.1",
-    "npm": "^6.5.0",
-    "puppeteer": "1.18.1",
-    "supertest": "^3.1.0"
+    "debug": "^4.3.7",
+    "morgan": "^1.10.0",
+    "merge-options": "^3.0.1",
+    "puppeteer": "^24.15.0"
   },
   "devDependencies": {
+    "chai": "^5.1.1",
+    "mocha": "^11.0.0",
+    "supertest": "^7.0.0",
+    "eslint": "^8.57.0"
   },
   "scripts": {
     "start": "node app/pdf-server.js",
     "test": "mocha",
-    "lint": "eslint *",
-    "fix": "eslint --fix *"
+    "lint": "eslint .",
+    "fix": "eslint --fix ."
   },
   "repository": {
     "type": "git",
@@ -33,5 +33,8 @@
   "bugs": {
     "url": "https://github.com/uyamazak/hcep-pdf-server/issues"
   },
-  "homepage": "https://github.com/uyamazak/hcep-pdf-server#readme"
+  "homepage": "https://github.com/uyamazak/hcep-pdf-server#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

@@ -1,57 +1,57 @@
 module.exports.expressApp = pages => {
-  const pagesNum = pages.length
-  console.log(`pages.length: ${pages.length}`)
-  let currentPageNo = 0
+  const pagesNum = pages.length;
+  console.log(`pages.length: ${pages.length}`);
+  let currentPageNo = 0;
   const getSinglePage = () => {
     currentPageNo++;
     if (currentPageNo >= pagesNum) {
-      currentPageNo = 0
+      currentPageNo = 0;
     }
-    debug(`pagesNum:${pagesNum} currentPageNo:${currentPageNo}`)
-    return pages[currentPageNo]
-  }
-  const bodyParser = require('body-parser')
-  const debug = require('debug')('hcepPdfServer:expressApp')
-  const express = require('express')
-  const morgan = require('morgan')
-  const timeout = require('connect-timeout')
+    debug(`pagesNum:${pagesNum} currentPageNo:${currentPageNo}`);
+    return pages[currentPageNo];
+  };
+  const bodyParser = require('body-parser');
+  const debug = require('debug')('hcepPdfServer:expressApp');
+  const express = require('express');
+  const morgan = require('morgan');
+  const timeout = require('connect-timeout');
   const crypto = require('crypto');
   const fs = require('fs');
   const http = require('http');
   const https = require('https');
-  const { getPdfOption, defaultPdfOptionKey } = require('./pdf-option/pdf-option-lib')
-  const secretHash = process.env.SECRET
-  const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000
-  const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000
-  const sslKeyPassword = process.env.PDF_SERVER_TLS_KEYSTORE_PASSWORD || ''
+  const { getPdfOption } = require('./pdf-option/pdf-option-lib');
+  const secretHash = process.env.SECRET ? crypto.createHash('sha256').update(process.env.SECRET).digest('hex') : null;
+  const appTimeoutMsec = process.env.HCEP_APP_TIMEOUT_MSEC || 10000;
+  const pageTimeoutMsec = process.env.HCEP_PAGE_TIMEOUT_MSEC || 10000;
+  const sslKeyPassword = process.env.PDF_SERVER_TLS_KEYSTORE_PASSWORD || '';
   //const privateKeyPath = process.env.SSL_KEY_PATH || ''
   //const privateCertPath = process.env.SSL_CERT_PATH || ''
   //const tlsConfig = process.env.PDF_SERVER_TLS_CONFIG || ''
-  const listenHttpPort = process.env.HCEP_PORT || 8001
-  const listenHttpsPort = process.env.HCEP_SSL_PORT || 8002
+  const listenHttpPort = process.env.HCEP_PORT || 8001;
+  const listenHttpsPort = process.env.HCEP_SSL_PORT || 8002;
   /* bytes or string for https://www.npmjs.com/package/bytes */
-  const maxRquestSize = process.env.HCEP_MAX_REQUEST_SIZE || '10MB'
+  const maxRquestSize = process.env.HCEP_MAX_REQUEST_SIZE || '10MB';
 
-  const app = express()
-  const env = app.get('env')
-  console.log('env:', env)
+  const app = express();
+  const env = app.get('env');
+  console.log('env:', env);
   if (env == 'production') {
-    app.use(morgan('combined'))
+    app.use(morgan('combined'));
   } else {
-    app.use(morgan('dev'))
+    app.use(morgan('dev'));
   }
 
   app.use(bodyParser.urlencoded({
     extended: false,
     limit: maxRquestSize
-  }))
-  app.use(timeout(appTimeoutMsec))
+  }));
+  app.use(timeout(appTimeoutMsec));
 
   function handlePageError(e, option) {
-    console.error('Page error occurred! process.exit()')
-    console.error('error:', e)
-    console.error('option:', option)
-    process.exit()
+    console.error('Page error occurred! process.exit()');
+    console.error('error:', e);
+    console.error('option:', option);
+    process.exit();
   }
 
   app.route('/')
@@ -63,41 +63,40 @@ module.exports.expressApp = pages => {
      * @return binary of PDF or error response (400 or 500)
      */
     .get(async (req, res) => {
-      const secret = req.query.secret
-      const url = req.query.url
-      const shasum = crypto.createHash('sha256');
-      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
-        res.status(401)
-        res.end('parameter "secret" is not set or you aren\'t authorized')
+      const secret = req.query.secret;
+      const url = req.query.url;
+      if(secretHash != null && (!secret || crypto.createHash('sha256').update(secret).digest('hex') != secretHash )) {
+        res.status(401);
+        res.end('parameter "secret" is not set or you aren\'t authorized');
       }else if (!url) {
-        res.status(400)
-        res.end('get parameter "url" is not set')
-        return
+        res.status(400);
+        res.end('get parameter "url" is not set');
+        return;
       } else {
-        const page = getSinglePage()
+        const page = getSinglePage();
         try {
           await page.goto(
             url, {
               timeout: pageTimeoutMsec,
               waitUntil: ['load', 'domcontentloaded']
             }
-          )
+          );
           // Wait for web font loading completion
           // await page.evaluateHandle('document.fonts.ready')
-          const pdfOption = getPdfOption("A4")
+          const pdfOption = getPdfOption('A4');
           // debug('pdfOption', pdfOption)
-          const buff = await page.pdf(pdfOption)
-          res.status(200)
-          res.contentType('application/pdf')
-          res.send(buff)
-          res.end()
-          return
+          const buff = await page.pdf(pdfOption);
+          res.status(200);
+          res.contentType('application/pdf');
+          res.send(buff);
+          res.end();
+          return;
         } catch (e) {
-          res.status(500)
-          res.contentType('text/plain')
-          res.end()
-          handlePageError(e, url)
-          return
+          res.status(500);
+          res.contentType('text/plain');
+          res.end();
+          handlePageError(e, url);
+          return;
         }
       }
     })
@@ -110,27 +109,26 @@ module.exports.expressApp = pages => {
      */
     .post(async (req, res) => {
 
-      const html = req.body.html
-      const secret = req.body.secret
-      const shasum = crypto.createHash('sha256');
-      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
-        res.status(401)
-        res.end('parameter "secret" is not set or you aren\'t authorized')
+      const html = req.body.html;
+      const secret = req.body.secret;
+      if(secretHash != null && (!secret || crypto.createHash('sha256').update(secret).digest('hex') != secretHash )) {
+        res.status(401);
+        res.end('parameter "secret" is not set or you aren\'t authorized');
       }else if (!html) {
-        res.status(400)
-        res.contentType('text/plain')
-        res.end('post parameter "html" is not set')
+        res.status(400);
+        res.contentType('text/plain');
+        res.end('post parameter "html" is not set');
       } else {
-        const page = getSinglePage()
+        const page = getSinglePage();
 
         try {
-          await page.setContent(html)
+          await page.setContent(html);
 
           var pdfOption = null;
           const optionsstr= req.body.pdfOption;
           if(optionsstr){
             const options= JSON.parse(optionsstr);
-            pdfOption = getPdfOption('A4')
+            pdfOption = getPdfOption('A4');
             pdfOption.format = options.format;
             pdfOption.landscape = options.landscape;
             pdfOption.scale = options.scale;
@@ -146,47 +144,47 @@ module.exports.expressApp = pages => {
             pdfOption.margin.left = options.marginLeft;
             pdfOption.pageRanges = options.pageRanges;
           }else{
-            pdfOption = getPdfOption(req.body.pdf_option)
-            debug(`using PDFOption:${pdfOption}`)
+            pdfOption = getPdfOption(req.body.pdf_option);
+            debug(`using PDFOption:${pdfOption}`);
             pdfOption.displayHeaderFooter = false;
 
             const leftMargin = req.body.leftMargin;
             if(leftMargin) {
-              debug(`setting Margin-Left:${leftMargin}`)
-              pdfOption.margin.left = leftMargin
+              debug(`setting Margin-Left:${leftMargin}`);
+              pdfOption.margin.left = leftMargin;
             }
             const rightMargin = req.body.rightMargin;
             if(leftMargin) {
-              debug(`setting Margin-Right:${rightMargin}`)
-              pdfOption.margin.right = rightMargin
+              debug(`setting Margin-Right:${rightMargin}`);
+              pdfOption.margin.right = rightMargin;
             }
             const topMargin = req.body.topMargin;
             if(topMargin) {
-              debug(`setting Margin-Right:${topMargin}`)
-              pdfOption.margin.top = topMargin
+              debug(`setting Margin-Right:${topMargin}`);
+              pdfOption.margin.top = topMargin;
             }
             const bottomMargin = req.body.bottomMargin;
             if(bottomMargin) {
-              debug(`setting Margin-Right:${bottomMargin}`)
-              pdfOption.margin.bottom = bottomMargin
+              debug(`setting Margin-Right:${bottomMargin}`);
+              pdfOption.margin.bottom = bottomMargin;
             }
           }
-          const buff = await page.pdf(pdfOption)
-          res.status(200)
-          res.contentType('application/pdf')
-          res.send(buff)
-          res.end()
-          return
+          const buff = await page.pdf(pdfOption);
+          res.status(200);
+          res.contentType('application/pdf');
+          res.send(buff);
+          res.end();
+          return;
         } catch (e) {
-          res.status(500)
-          res.contentType('text/plain')
-          res.end()
-          handlePageError(e, 'html.length:' + html.length)
-          return
+          res.status(500);
+          res.contentType('text/plain');
+          res.end();
+          handlePageError(e, 'html.length:' + html.length);
+          return;
         }
       }
 
-    })
+    });
 
   app.route('/screenshot')
     /**
@@ -196,37 +194,36 @@ module.exports.expressApp = pages => {
      * @return binary of PNG or error response (400 or 500)
      */
     .get(async (req, res) => {
-      const url = req.query.url
-      const secret = req.query.secret
-      const shasum = crypto.createHash('sha256');
-      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
-        res.status(401)
-        res.end('parameter "secret" is not set or you aren\'t authorized')
+      const url = req.query.url;
+      const secret = req.query.secret;
+      if(secretHash != null && (!secret || crypto.createHash('sha256').update(secret).digest('hex') != secretHash )) {
+        res.status(401);
+        res.end('parameter "secret" is not set or you aren\'t authorized');
       }else if (!url) {
-        res.status(400)
-        res.contentType('text/plain')
-        res.end('get parameter "url" is not set')
+        res.status(400);
+        res.contentType('text/plain');
+        res.end('get parameter "url" is not set');
       } else {
-        const page = getSinglePage()
+        const page = getSinglePage();
         try {
           await page.goto(
             url, {
               timeout: pageTimeoutMsec,
               waitUntil: ['load', 'domcontentloaded']
             }
-          )
+          );
           const buff = await page.screenshot({
             fullPage: true
-          })
-          res.status(200)
-          res.contentType('image/png')
-          res.send(buff)
-          res.end()
+          });
+          res.status(200);
+          res.contentType('image/png');
+          res.send(buff);
+          res.end();
         } catch (e) {
-          console.error(e)
-          res.status(500)
-          res.contentType('text/plain')
-          res.end()
+          console.error(e);
+          res.status(500);
+          res.contentType('text/plain');
+          res.end();
         }
       }
     })
@@ -237,79 +234,84 @@ module.exports.expressApp = pages => {
      * @return binary of PNG or error response (400 or 500)
      */
     .post(async (req, res) => {
-      const html = req.body.html
-      const secret = req.body.secret
-      const shasum = crypto.createHash('sha256');
-      if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
-        res.status(401)
-        res.end('parameter "secret" is not set or you aren\'t authorized')
+      const html = req.body.html;
+      const secret = req.body.secret;
+      if(secretHash != null && (!secret || crypto.createHash('sha256').update(secret).digest('hex') != secretHash )) {
+        res.status(401);
+        res.end('parameter "secret" is not set or you aren\'t authorized');
       }else if (!html) {
-        await res.status(400)
-        res.end('post parameter "html" is not set')
-        return
+        await res.status(400);
+        res.end('post parameter "html" is not set');
+        return;
       } else {
-        const page = getSinglePage()
+        const page = getSinglePage();
         try {
-          await page.setContent(html)
+          await page.setContent(html);
           const buff = await page.screenshot({
             fullPage: true
-          })
-          res.status(200)
-          res.contentType('image/png')
-          res.send(buff)
-          res.end()
+          });
+          res.status(200);
+          res.contentType('image/png');
+          res.send(buff);
+          res.end();
         } catch (e) {
-          console.error(e)
-          res.status(500)
-          res.end()
+          console.error(e);
+          res.status(500);
+          res.end();
         }
       }
-    })
+    });
 
   /**
    * Health Check
    */
   app.get('/hc', async (req, res) => {
-    const secret = req.query.secret
-    const shasum = crypto.createHash('sha256');
-    if(secretHash != null && (!secret || shasum.update(secret).digest('hex') != secretHash )) {
-      res.status(401)
-      res.end('parameter "secret" is not set or you aren\'t authorized')
+    const secret = req.query.secret;
+    if(secretHash != null && (!secret || crypto.createHash('sha256').update(secret).digest('hex') != secretHash )) {
+      res.status(401);
+      res.end('parameter "secret" is not set or you aren\'t authorized');
     }else{
-      debug('health check ok')
-      res.status(200)
-      res.end('ok')
+      debug('health check ok');
+      res.status(200);
+      res.end('ok');
     }
-  })
+  });
 
   try {
-    let tlsConfig = __dirname+"/tls"
+    let tlsConfig = __dirname+'/tls';
 
-    // Check for empty directory
-    if(fs.readdirSync(tlsConfig).length === 0) {
+    // Check if tls directory exists
+    let tlsDirExists = false;
+    try {
+      tlsDirExists = fs.existsSync(tlsConfig);
+    } catch (e) {
+      debug('tls directory check failed:', e.message);
+    }
+
+    if (!tlsDirExists || fs.readdirSync(tlsConfig).length === 0) {
       debug('https not configured');
       var httpServer = http.createServer(app);
       httpServer.listen(listenHttpPort);
-      console.log('Listening on:', listenHttpPort)
+      console.log('Listening on:', listenHttpPort);
       return httpServer;
     } else {
       try{
-      var privateKey  = fs.readFileSync(tlsConfig+"/pdf_server.key", 'utf8');
-      var certificate = fs.readFileSync(tlsConfig+"/pdf_server.crt", 'utf8');
-    } catch(err){
-      debug("Folder exists, but filenames aren't correct. Falling back to http");
-      console.log(err);
-      var httpServer = http.createServer(app);
-      httpServer.listen(listenHttpPort);
-      console.log('Listening on:', listenHttpPort)
-      return httpServer;
-    }
+        var privateKey  = fs.readFileSync(tlsConfig+'/pdf_server.key', 'utf8');
+        var certificate = fs.readFileSync(tlsConfig+'/pdf_server.crt', 'utf8');
+      } catch(err){
+        debug('Folder exists, but filenames aren\'t correct. Falling back to http');
+        console.log(err);
+        httpServer = http.createServer(app);
+        httpServer.listen(listenHttpPort);
+        console.log('Listening on:', listenHttpPort);
+        return httpServer;
+      }
       var credentials = { key : privateKey, cert : certificate, passphrase : sslKeyPassword };
 
       var httpsServer = https.createServer(credentials, app);
       httpsServer.listen(listenHttpsPort);
 
-      console.log('Listening on:', listenHttpsPort)
+      console.log('Listening on:', listenHttpsPort);
       return httpsServer;
     }
   } catch (err) {
@@ -318,4 +320,4 @@ module.exports.expressApp = pages => {
   }
 
   return null;
-}
+};
