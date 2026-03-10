@@ -45,6 +45,7 @@ module.exports.expressApp = pages => {
     extended: false,
     limit: maxRquestSize
   }));
+  app.use(bodyParser.json({ limit: maxRquestSize }));
   app.use(timeout(appTimeoutMsec));
 
   function handlePageError(e, option) {
@@ -86,9 +87,10 @@ module.exports.expressApp = pages => {
           const pdfOption = getPdfOption('A4');
           // debug('pdfOption', pdfOption)
           const buff = await page.pdf(pdfOption);
-          res.status(200);
-          res.contentType('application/pdf');
-          res.send(buff);
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Length', buff.length);
+          res.write(buff);
           res.end();
           return;
         } catch (e) {
@@ -170,9 +172,10 @@ module.exports.expressApp = pages => {
             }
           }
           const buff = await page.pdf(pdfOption);
-          res.status(200);
-          res.contentType('application/pdf');
-          res.send(buff);
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Length', buff.length);
+          res.write(buff);
           res.end();
           return;
         } catch (e) {
@@ -275,6 +278,13 @@ module.exports.expressApp = pages => {
       res.status(200);
       res.end('ok');
     }
+  });
+
+  app.get('/debug/chrome-version', async (req, res) => {
+    const page = getSinglePage();
+    const client = await page.target().createCDPSession();
+    const version = await client.send('Browser.getVersion');
+    res.json(version);
   });
 
   try {
