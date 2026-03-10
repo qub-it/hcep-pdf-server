@@ -1,68 +1,74 @@
-# This is built upon debian-stretch for apt-get packages
-# So we have stretch and stretch/updates available
-FROM node:lts-slim as pdf_server_build
+FROM node:20-slim as pdf_server_build
 
 LABEL maintainer="diogo.sousa@qub-it.com"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV DEBIAN_FRONTEND="noninteractive"
+ENV DEBIAN_FRONTEND=noninteractive \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false \
+    NODE_ENV=production
 
-# Adding requirements for local build
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
-    wget=1.21.3-1+b2 \
-    gnupg2=2.2.40-1.1 \
-    libxss1=1:1.2.3-1 \
-    ca-certificates=20230311 \
-    # Cleaning operations after install
+    dumb-init \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libc6 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgbm1 \
+    libgcc1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libstdc++6 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    xdg-utils \
+    curl \
+    gnupg \
     && apt-get autoremove --yes --purge \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install stable chrome and dependencies.
-# "-O -" writes file contents to stdout
-
-RUN wget --quiet --output-document - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-  && bash -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-  && apt-get update \
-  && apt-get install --yes --no-install-recommends google-chrome-stable=119.0.6045.199-1 \
-  # Cleaning operations after install
-  && apt-get autoremove --yes --purge \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  # Chrome specific cleaning operations
-  && rm -rf /src/*.deb \
-  && rm -rf /etc/apt/sources.list.d/*
-
-# It's a good idea to use dumb-init to help prevent zombie chrome processes.
-ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.4/dumb-init_1.2.4_x86_64 /usr/local/bin/dumb-init
-
-RUN chmod +x /usr/local/bin/dumb-init
-
-# If you wish to use default chromium installed with puppeteer
-ENV HCEP_USE_CHROMIUM="true"
-
-# If you want to extend pdf options, rename app/my-pdf-option-presets.js.sample to app/my-pdf-option-presets.js and activate this
-ENV HCEP_MY_PDF_OPTION_PRESETS_FILE_PATH="./my-pdf-option-presets"
-
-ENV NODE_ENV="production"
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install --yes google-chrome-stable && \
+    apt-get autoremove --yes --purge && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN mkdir /hcep/
 
-COPY package.json /hcep/
+COPY package.json package-lock.json* /hcep/
 
 WORKDIR /hcep/
 
-RUN npm install --no-optional --no-package-lock npm@6.14.5 && \
-    npm install --global --no-optional --no-package-lock mocha@7.2.0 eslint@7.1.0 && \
-    # This installs the hcep-server through the package.json file
-    npm install --no-optional --no-package-lock && \
-    # NPM clean up - yes, I know what I'm doing.
-    npm prune --force && \
+RUN npm ci --omit=dev && \
     npm cache clean --force
 
-# Install fonts
 COPY fonts /usr/share/fonts
 
 COPY app /hcep/app
@@ -75,19 +81,12 @@ WORKDIR /hcep/
 
 RUN chmod -R 777 /hcep/app
 
-# Final cleaning operation - remove any lingering files that are not needed
-RUN apt-get autoremove --yes --purge \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /etc/apt/sources.list.d/*
-
-# Start a fresh image - this is the one that will be tagged
 FROM scratch
 
-# Copy everything over - no issues as this image runs from / and uses root:root
 COPY --from=pdf_server_build / /
 
 WORKDIR /hcep/
 
-ENTRYPOINT [ "dumb-init", "--" ]
+ENTRYPOINT ["dumb-init", "--"]
 
-CMD [ "node", "--inspect=0.0.0.0:9229", "app/pdf-server.js" ]
+CMD ["node", "app/pdf-server.js"]

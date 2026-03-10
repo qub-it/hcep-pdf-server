@@ -1,5 +1,5 @@
-const mergeOptions = require('merge-options')
-const defaultMargin = process.env.HCEP_DEFAULT_MARGIN || '20mm'
+const mergeOptions = require('merge-options');
+const defaultMargin = process.env.HCEP_DEFAULT_MARGIN || '20mm';
 const defaultOption = {
   scale: 1,
   displayHeaderFooter: false,
@@ -17,8 +17,8 @@ const defaultOption = {
   marginBottom: '',
   marginLeft: '',
   preferCSSPageSize: true
-}
-module.exports.defaultOption = defaultOption
+};
+module.exports.defaultOption = defaultOption;
 
 /**
  * PdfOption more detail
@@ -31,24 +31,24 @@ module.exports.PdfOption = class {
      Since this application does not save the generated PDF to the disk,
      "path" should not be set.
     */
-    if(!options) options = {}
-    options = mergeOptions(defaultOption, options)
-    this.scale = options.scale
-    this.displayHeaderFooter = options.displayHeaderFooter
-    this.headerTemplate = options.headerTemplate
-    this.footerTemplate = options.footerTemplate
-    this.printBackground = options.printBackground
-    this.landscape = options.landscape
-    this.pageRanges = options.pageRanges
-    this.format = options.format
-    this.width = options.width
-    this.height = options.height
+    if(!options) options = {};
+    options = mergeOptions(defaultOption, options);
+    this.scale = options.scale;
+    this.displayHeaderFooter = options.displayHeaderFooter;
+    this.headerTemplate = options.headerTemplate;
+    this.footerTemplate = options.footerTemplate;
+    this.printBackground = options.printBackground;
+    this.landscape = options.landscape;
+    this.pageRanges = options.pageRanges;
+    this.format = options.format;
+    this.width = options.width;
+    this.height = options.height;
     this.margin = {
       top: options.marginTop || options.margin,
       right: options.marginRight || options.margin,
       bottom: options.marginBottom || options.margin,
       left: options.marginLeft || options.margin
-    }
-    this.preferCSSPageSize = options.preferCSSPageSize
+    };
+    this.preferCSSPageSize = options.preferCSSPageSize;
   }
-}
+};
