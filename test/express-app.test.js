@@ -1,15 +1,23 @@
 /* eslint-disable no-unused-vars */
+const assert = require('assert');
 const request = require('supertest');
 const { expressApp } = require('../app/express-app');
 
+let newPageCount = 0;
+
 const createMockPage = () => {
-  return {
+  const page = {
+    closed: false,
     goto: async () => {},
     setContent: async () => {},
     pdf: async () => Buffer.from('%PDF-1.4 mock pdf content'),
     screenshot: async () => Buffer.from('mock png'),
-    close: async () => {}
+    close: async () => { page.closed = true; },
+    browser: () => ({
+      newPage: async () => { newPageCount++; return createMockPage(); }
+    })
   };
+  return page;
 };
 
 describe('Express App Tests', () => {
@@ -21,6 +29,7 @@ describe('Express App Tests', () => {
     basePort = 8001 + Math.floor(Math.random() * 1000);
     process.env.HCEP_PORT = String(basePort);
     delete process.env.SECRET;
+    newPageCount = 0;
     mockPages = [createMockPage(), createMockPage()];
   });
 
@@ -52,6 +61,21 @@ describe('Express App Tests', () => {
         .get('/?url=http://example.com')
         .expect(200)
         .expect('content-type', /application\/pdf/);
+    });
+
+    it('GET / should recycle only the page used for the request', async () => {
+      const used = mockPages[1];
+      const untouched = mockPages[0];
+      const app = getApp();
+      await request(app)
+        .get('/?url=http://example.com')
+        .expect(200);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      assert.strictEqual(used.closed, true);
+      assert.strictEqual(untouched.closed, false);
+      assert.strictEqual(mockPages[0], untouched);
+      assert.notStrictEqual(mockPages[1], used);
+      assert.strictEqual(newPageCount, 1);
     });
 
     it('POST / should return 400 when html is missing', async () => {
