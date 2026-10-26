@@ -55,6 +55,19 @@ module.exports.expressApp = pages => {
     process.exit();
   }
 
+  const recyclePage = async page => {
+    try {
+      const index = pages.indexOf(page);
+      const browser = page.browser();
+      await page.close();
+      if (index !== -1) {
+        pages[index] = await browser.newPage();
+      }
+    } catch (e) {
+      debug('recyclePage failed:', e.message);
+    }
+  };
+
   app.route('/')
     /**
      * get()
@@ -92,6 +105,7 @@ module.exports.expressApp = pages => {
           res.setHeader('Content-Length', buff.length);
           res.write(buff);
           res.end();
+          await recyclePage(page);
           return;
         } catch (e) {
           res.status(500);
@@ -177,6 +191,7 @@ module.exports.expressApp = pages => {
           res.setHeader('Content-Length', buff.length);
           res.write(buff);
           res.end();
+          await recyclePage(page);
           return;
         } catch (e) {
           res.status(500);
@@ -222,6 +237,7 @@ module.exports.expressApp = pages => {
           res.contentType('image/png');
           res.send(buff);
           res.end();
+          await recyclePage(page);
         } catch (e) {
           console.error(e);
           res.status(500);
@@ -257,6 +273,7 @@ module.exports.expressApp = pages => {
           res.contentType('image/png');
           res.send(buff);
           res.end();
+          await recyclePage(page);
         } catch (e) {
           console.error(e);
           res.status(500);
