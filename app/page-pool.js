@@ -10,8 +10,13 @@ class PagePool {
         this.debug = options.debug || console.error;
         this.acquireTimeout = options.acquireTimeout ?? 30000;
 
+        this.recoverInterval = options.recoverInterval ?? 5000;
+        this.onBrowserDisconnected = options.onBrowserDisconnected || null;
+
         this.closed = false;
         this.waiters = [];
+        this.recoverTimer = null;
+        this.disconnectedBrowsers = new Set();
 
         this.slots = pages.map(page => ({
             page,
@@ -21,6 +26,87 @@ class PagePool {
             failed: false,
             releasePromise: null
         }));
+
+        this.watchBrowsers();
+    }
+
+    // A crashed/killed browser cannot be recovered by opening new pages:
+    // every newPage() call would fail forever. Surface it so the owner can
+    // terminate the process and let the orchestrator restart it.
+    watchBrowsers() {
+        const browsers = new Set(this.slots.map(slot => slot.browser));
+
+        for (const browser of browsers) {
+            if (!browser || typeof browser.on !== 'function') {
+                continue;
+            }
+
+            browser.on('disconnected', () => {
+                if (this.closed) {
+                    return;
+                }
+
+                this.disconnectedBrowsers.add(browser);
+
+                this.debug('Browser disconnected');
+
+                if (this.onBrowserDisconnected) {
+                    this.onBrowserDisconnected(browser);
+                }
+            });
+        }
+    }
+
+    isBrowserConnected(browser) {
+        if (this.disconnectedBrowsers.has(browser)) {
+            return false;
+        }
+
+        // Puppeteer >= 22 exposes `connected`; older versions `isConnected()`.
+        if (typeof browser.connected === 'boolean') {
+            return browser.connected;
+        }
+
+        if (typeof browser.isConnected === 'function') {
+            return browser.isConnected();
+        }
+
+        return true;
+    }
+
+    isHealthy() {
+        if (this.closed) {
+            return false;
+        }
+
+        return this.slots.some(slot =>
+            !slot.failed &&
+            this.isBrowserConnected(slot.browser)
+        );
+    }
+
+    scheduleRecovery() {
+        if (this.closed || this.recoverTimer || this.recoverInterval <= 0) {
+            return;
+        }
+
+        this.recoverTimer = setTimeout(async () => {
+            this.recoverTimer = null;
+
+            try {
+                await this.recoverFailedPages();
+            } catch (e) {
+                this.debug('Scheduled page recovery failed:', e.message);
+            }
+
+            if (this.slots.some(slot => slot.failed)) {
+                this.scheduleRecovery();
+            }
+        }, this.recoverInterval);
+
+        if (typeof this.recoverTimer.unref === 'function') {
+            this.recoverTimer.unref();
+        }
     }
 
     findAvailableSlot() {
@@ -193,6 +279,8 @@ class PagePool {
                 e.message
             );
 
+            this.scheduleRecovery();
+
         } finally {
             slot.busy = false;
             slot.recycling = false;
@@ -208,7 +296,12 @@ class PagePool {
         try {
             return await callback(lease.page);
         } finally {
-            await lease.release();
+            // Recycle in the background so the caller can respond immediately.
+            // The slot stays busy/recycling until the new page is ready, so
+            // pool capacity is unaffected; close() awaits slot.releasePromise.
+            lease.release().catch(e => {
+                this.debug('Background page release failed:', e.message);
+            });
         }
     }
 
@@ -220,7 +313,8 @@ class PagePool {
         const failedSlots = this.slots.filter(slot =>
             slot.failed &&
             !slot.busy &&
-            !slot.recycling
+            !slot.recycling &&
+            this.isBrowserConnected(slot.browser)
         );
 
         await Promise.all(
@@ -281,6 +375,12 @@ class PagePool {
                 waiter => waiter.active
             ).length,
 
+            browserConnected: this.slots.every(slot =>
+                this.isBrowserConnected(slot.browser)
+            ),
+
+            healthy: this.isHealthy(),
+
             closed: this.closed
         };
     }
@@ -291,6 +391,11 @@ class PagePool {
         }
 
         this.closed = true;
+
+        if (this.recoverTimer) {
+            clearTimeout(this.recoverTimer);
+            this.recoverTimer = null;
+        }
 
         for (const waiter of this.waiters.splice(0)) {
             waiter.active = false;

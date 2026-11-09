@@ -49,9 +49,21 @@ module.exports.expressApp = pages => {
   // Page Pool
   // --------------------------------------------------
 
+  const pageRecoverIntervalMsec =
+      Number(process.env.HCEP_PAGE_RECOVER_INTERVAL_MSEC) || 5000;
+
   const pagePool = new PagePool(pages, {
     acquireTimeout: 30000,
-    debug
+    recoverInterval: pageRecoverIntervalMsec,
+    debug,
+
+    // The browser is gone (crash, OOM kill, ...). No page can be recreated,
+    // so fail fast and let Docker / the orchestrator restart the container,
+    // as the previous implementation did on any page error.
+    onBrowserDisconnected: () => {
+      console.error('Browser disconnected! process.exit(1)');
+      process.exit(1);
+    }
   });
 
   // --------------------------------------------------
@@ -425,6 +437,12 @@ module.exports.expressApp = pages => {
       return res.status(401).end(
           'parameter "secret" is not set or you aren\'t authorized'
       );
+    }
+
+    if (!pagePool.isHealthy()) {
+      console.error('health check failed:', pagePool.getStatus());
+
+      return res.status(503).end('unhealthy');
     }
 
     debug('health check ok');
