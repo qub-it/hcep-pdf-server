@@ -53,12 +53,15 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && \
-    apt-get install --yes google-chrome-stable && \
-    apt-get autoremove --yes --purge && \
+    curl -fSL https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_145.0.7632.159-1_amd64.deb \
+        -o /tmp/google-chrome.deb && \
+    apt-get install --yes /tmp/google-chrome.deb && \
+    apt-mark hold google-chrome-stable && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    google-chrome --version
 
 RUN mkdir /hcep/
 
